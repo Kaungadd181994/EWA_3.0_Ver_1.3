@@ -65,93 +65,93 @@ export default function Dashboard({
           <p className="text-xs text-gray-500">Real-time metrics computed directly from the Double-Entry Circle Ledger.</p>
         </div>
         <div className="flex items-center space-x-2 text-xs text-gray-500">
-          <i className="fa-solid fa-clock text-amber-600" />
+          <i className="fa-solid fa-clock text-emerald-600" />
           <span>System Date: <strong>2026-06-29 (UTC-7)</strong></span>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* KPI Cards - Flat Base, Less Card, Grass Green Brand Color */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-gray-200 border border-gray-200 bg-white">
         
         {/* KPI 1: Total Platform Assets */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Assets</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-              <i className="fa-solid fa-building-columns text-sm" />
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Assets</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <i className="fa-solid fa-building-columns text-xs" />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-lg font-bold text-gray-900 font-mono">
-              {totalAssets.toLocaleString()} <span className="text-xs font-sans text-gray-400">MMK</span>
+          <div className="mt-4">
+            <h3 className="text-base font-bold text-gray-900 font-mono">
+              {totalAssets.toLocaleString()} <span className="text-[10px] font-sans text-gray-400">MMK</span>
             </h3>
-            <p className="text-[10px] text-gray-400 mt-1">Cash + Active Receivables</p>
+            <p className="text-[9px] text-gray-400 mt-1">Cash + Active Receivables</p>
           </div>
         </div>
 
         {/* KPI 2: Total Revenue */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Fee Revenue</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
-              <i className="fa-solid fa-hand-holding-dollar text-sm" />
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Fee Revenue</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <i className="fa-solid fa-hand-holding-dollar text-xs" />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-lg font-bold text-amber-900 font-mono">
-              {totalRevenue.toLocaleString()} <span className="text-xs font-sans text-gray-400">MMK</span>
+          <div className="mt-4">
+            <h3 className="text-base font-bold text-emerald-800 font-mono">
+              {totalRevenue.toLocaleString()} <span className="text-[10px] font-sans text-gray-400">MMK</span>
             </h3>
-            <p className="text-[10px] text-emerald-600 mt-1">
+            <p className="text-[9px] text-emerald-600 mt-1">
               <i className="fa-solid fa-arrow-up" /> Service + Late Penalty
             </p>
           </div>
         </div>
 
         {/* KPI 3: Overdue Outstanding */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">EWA Outstanding</span>
-            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center">
-              <i className="fa-solid fa-triangle-exclamation text-sm" />
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">EWA Outstanding</span>
+            <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center">
+              <i className="fa-solid fa-triangle-exclamation text-xs" />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-lg font-bold text-rose-900 font-mono">
-              {advancesReceivable.toLocaleString()} <span className="text-xs font-sans text-gray-400">MMK</span>
+          <div className="mt-4">
+            <h3 className="text-base font-bold text-rose-900 font-mono">
+              {advancesReceivable.toLocaleString()} <span className="text-[10px] font-sans text-gray-400">MMK</span>
             </h3>
-            <p className="text-[10px] text-gray-400 mt-1">Active advanced salaries</p>
+            <p className="text-[9px] text-gray-400 mt-1">Active advanced salaries</p>
           </div>
         </div>
 
         {/* KPI 4: Net Profit */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        <div className="p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Net Income</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
-              <i className="fa-solid fa-chart-line text-sm" />
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Net Income</span>
+            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+              <i className="fa-solid fa-chart-line text-xs" />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-lg font-bold text-blue-900 font-mono">
-              {netIncome.toLocaleString()} <span className="text-xs font-sans text-gray-400">MMK</span>
+          <div className="mt-4">
+            <h3 className="text-base font-bold text-blue-900 font-mono">
+              {netIncome.toLocaleString()} <span className="text-[10px] font-sans text-gray-400">MMK</span>
             </h3>
-            <p className="text-[10px] text-gray-400 mt-1">Revenue minus expenses</p>
+            <p className="text-[9px] text-gray-400 mt-1">Revenue minus expenses</p>
           </div>
         </div>
 
-        {/* KPI 5: Cash Pool (1100) */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+        {/* KPI 5: Cash Pool */}
+        <div className="p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Liquidity Pool</span>
-            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
-              <i className="fa-solid fa-wallet text-sm" />
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Liquidity Pool</span>
+            <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
+              <i className="fa-solid fa-wallet text-xs" />
             </div>
           </div>
-          <div className="mt-3">
-            <h3 className="text-lg font-bold text-purple-900 font-mono">
-              {cashPool.toLocaleString()} <span className="text-xs font-sans text-gray-400">MMK</span>
+          <div className="mt-4">
+            <h3 className="text-base font-bold text-purple-900 font-mono">
+              {cashPool.toLocaleString()} <span className="text-[10px] font-sans text-gray-400">MMK</span>
             </h3>
-            <p className="text-[10px] text-purple-600 font-medium mt-1">GL Account 1100</p>
+            <p className="text-[9px] text-purple-600 font-medium mt-1">GL Account 1100</p>
           </div>
         </div>
 
@@ -161,10 +161,10 @@ export default function Dashboard({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Interactive EWA Transaction Simulator */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div className="lg:col-span-2 bg-white border border-gray-250 p-5 space-y-4">
           <div className="border-b border-gray-100 pb-3">
             <h3 className="text-sm font-bold text-gray-900 flex items-center space-x-2">
-              <i className="fa-solid fa-vial text-amber-700" />
+              <i className="fa-solid fa-vial text-emerald-700" />
               <span>Double-Entry Transaction Simulator (GoRule + Ledger Validation)</span>
             </h3>
             <p className="text-xs text-gray-500 mt-1">
@@ -179,7 +179,7 @@ export default function Dashboard({
               <select
                 value={simEmployeeId}
                 onChange={(e) => setSimEmployeeId(Number(e.target.value))}
-                className="w-full text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                className="w-full text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
               >
                 {employees.map(emp => {
                   const company = companies.find(c => c.id === emp.companyId);
@@ -198,7 +198,7 @@ export default function Dashboard({
                 type="number"
                 value={simAmount}
                 onChange={(e) => setSimAmount(Number(e.target.value))}
-                className="w-full text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:ring-1 focus:ring-amber-500 focus:outline-none font-mono"
+                className="w-full text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:ring-1 focus:ring-emerald-500 focus:outline-none font-mono"
                 step="5000"
                 min="10000"
                 max="200000"
@@ -208,10 +208,10 @@ export default function Dashboard({
 
           {/* Selected Employee Snapshot */}
           {selectedEmp && (
-            <div className="bg-amber-50/40 p-3 rounded-lg border border-amber-100/50 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="bg-emerald-50/10 p-3 border border-emerald-100/40 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
                 <span className="text-gray-400 block text-[10px] uppercase">Roster Status</span>
-                <span className={`font-semibold ${selectedEmp.status === 'Active' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                <span className={`font-semibold ${selectedEmp.status === 'Active' ? 'text-emerald-700' : 'text-emerald-800'}`}>
                   {selectedEmp.status}
                 </span>
               </div>
@@ -229,7 +229,7 @@ export default function Dashboard({
               </div>
               <div>
                 <span className="text-gray-400 block text-[10px] uppercase">Risk Tier (Company)</span>
-                <span className="font-bold text-amber-800">
+                <span className="font-bold text-emerald-800">
                   Tier {selectedEmpCompany?.tier || 'C'} ({selectedEmpCompany?.name})
                 </span>
               </div>
@@ -237,17 +237,17 @@ export default function Dashboard({
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             <button
               onClick={() => handleSimulate('disburse')}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs rounded-lg flex items-center space-x-2 transition-colors duration-150 cursor-pointer"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg flex items-center space-x-2 transition-colors duration-150 cursor-pointer"
             >
               <i className="fa-solid fa-hand-holding-dollar" />
               <span>Simulate Employee Advance Request</span>
             </button>
             <button
               onClick={() => handleSimulate('repay')}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium text-xs rounded-lg flex items-center space-x-2 transition-colors duration-150 cursor-pointer"
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-950 text-white font-semibold text-xs rounded-lg flex items-center space-x-2 transition-colors duration-150 cursor-pointer"
             >
               <i className="fa-solid fa-money-check-dollar" />
               <span>Simulate Corporate Settlement (Repay All)</span>
@@ -270,10 +270,10 @@ export default function Dashboard({
         </div>
 
         {/* Quick Report Access List */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col justify-between">
+        <div className="bg-white border border-gray-250 p-5 flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center space-x-2">
-              <i className="fa-solid fa-link text-amber-700" />
+              <i className="fa-solid fa-link text-emerald-700" />
               <span>Quick Access Reports</span>
             </h3>
             <p className="text-xs text-gray-500 mt-1.5 mb-4">
@@ -285,35 +285,35 @@ export default function Dashboard({
                 className="w-full text-left text-xs p-2 hover:bg-gray-50 rounded-lg flex items-center justify-between group"
               >
                 <span className="text-gray-700 font-medium">Trial Balance Report</span>
-                <i className="fa-solid fa-chevron-right text-gray-300 group-hover:text-amber-700 transition-colors" />
+                <i className="fa-solid fa-chevron-right text-gray-300 group-hover:text-emerald-700 transition-colors" />
               </button>
               <button
                 onClick={() => setCurrentTab('profit-loss')}
                 className="w-full text-left text-xs p-2 hover:bg-gray-50 rounded-lg flex items-center justify-between group"
               >
                 <span className="text-gray-700 font-medium">Profit & Loss Statement</span>
-                <i className="fa-solid fa-chevron-right text-gray-300 group-hover:text-amber-700 transition-colors" />
+                <i className="fa-solid fa-chevron-right text-gray-300 group-hover:text-emerald-700 transition-colors" />
               </button>
               <button
                 onClick={() => setCurrentTab('journal-entries')}
                 className="w-full text-left text-xs p-2 hover:bg-gray-50 rounded-lg flex items-center justify-between group"
               >
                 <span className="text-gray-700 font-medium">All Journal Entries Ledger</span>
-                <i className="fa-solid fa-chevron-right text-gray-300 group-hover:text-amber-700 transition-colors" />
+                <i className="fa-solid fa-chevron-right text-gray-300 group-hover:text-emerald-700 transition-colors" />
               </button>
               <button
                 onClick={() => setCurrentTab('companies')}
                 className="w-full text-left text-xs p-2 hover:bg-gray-50 rounded-lg flex items-center justify-between group"
               >
                 <span className="text-gray-700 font-medium">Companies Manager</span>
-                <i className="fa-solid fa-chevron-right text-gray-300 group-hover:text-amber-700 transition-colors" />
+                <i className="fa-solid fa-chevron-right text-gray-300 group-hover:text-emerald-700 transition-colors" />
               </button>
             </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-gray-100">
-            <div className="bg-amber-50/50 p-3 rounded-lg flex items-center space-x-3 text-xs text-amber-800 leading-tight">
-              <i className="fa-solid fa-shield-halved text-lg text-amber-700 shrink-0" />
+            <div className="bg-emerald-50/40 p-3 flex items-center space-x-3 text-xs text-emerald-800 leading-tight">
+              <i className="fa-solid fa-shield-halved text-lg text-emerald-700 shrink-0" />
               <div>
                 <strong>Maker-Checker Enabled</strong>: Core operations such as KYC uploads, settlement receipt approvals, and budget distributions enforce strict dual approvals.
               </div>
@@ -324,7 +324,7 @@ export default function Dashboard({
       </div>
 
       {/* Circle Ledger Health check */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+      <div className="bg-white border border-gray-200 p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
           <div className="flex items-center space-x-2.5">
             <span className="flex h-2.5 w-2.5 relative">

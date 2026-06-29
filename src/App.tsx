@@ -7,8 +7,10 @@ import FormCreator from './components/FormCreator';
 import OnboardingWizard from './components/OnboardingWizard';
 import RiskAndOps from './components/RiskAndOps';
 import PublishGitHub from './components/PublishGitHub';
+import NotificationCenter from './components/NotificationCenter';
+import ValidationEngine from './components/ValidationEngine';
 
-import { Company, Employee, User, FeeConfig, JournalEntry, FormSchema, CompanyOnboarding, SettlementRequest, QRProcessingRequest, DisbursementFeedItem } from './types';
+import { Company, Employee, User, FeeConfig, JournalEntry, FormSchema, CompanyOnboarding, SettlementRequest, QRProcessingRequest, DisbursementFeedItem, ValidationRule } from './types';
 import { 
   SEED_COMPANIES, 
   SEED_EMPLOYEES, 
@@ -25,6 +27,7 @@ import {
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<string>('overview');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
 
   // Core State
   const [companies, setCompanies] = useState<Company[]>(() => loadState('ewa_companies', SEED_COMPANIES));
@@ -37,6 +40,15 @@ export default function App() {
   const [settlements, setSettlements] = useState<SettlementRequest[]>(() => loadState('ewa_settlements', SEED_SETTLEMENTS));
   const [qrRequests, setQrRequests] = useState<QRProcessingRequest[]>(() => loadState('ewa_qr_requests', SEED_QR_REQUESTS));
   
+  // DMN Rules State
+  const [rules, setRules] = useState<ValidationRule[]>(() => loadState('ewa_validation_rules', [
+    { id: 'rule-1', name: 'Freeze Day Cap Check', inputField: 'payroll_frozen', operator: '==', value: 'true', action: 'BLOCK', errorMessage: 'Validation Blocked [DMN-001]: Period has closed for this cycle (Payroll Frozen).', enabled: true, priority: 100 },
+    { id: 'rule-2', name: 'Active Whitelisted Status', inputField: 'nrc_verified', operator: '==', value: 'false', action: 'BLOCK', errorMessage: 'Validation Blocked [DMN-002]: Access restricted. Contact employer HR department.', enabled: true, priority: 90 },
+    { id: 'rule-3', name: 'Daily Maximum EWA limit (MMK)', inputField: 'amount', operator: '>', value: '500000', action: 'BLOCK', errorMessage: 'Validation Blocked [DMN-003]: Advance request exceeding daily MMK transaction limit of {{limit}} MMK.', enabled: true, priority: 80 },
+    { id: 'rule-4', name: 'Draw Cap Base Salary Limit (%)', inputField: 'salary_percentage', operator: '>', value: '50', action: 'BLOCK', errorMessage: 'Validation Blocked [DMN-004]: Request is capped at maximum {{limit}}% of employee monthly salary.', enabled: true, priority: 70 },
+    { id: 'rule-5', name: 'Maker Checker Double Verification', inputField: 'amount', operator: '>', value: '300000', action: 'CHECKER_REQUIRED', errorMessage: 'Escalated [DMN-005]: High-amount transaction (> {{limit}} MMK) requires Maker-Checker secondary audit approval.', enabled: true, priority: 60 }
+  ]));
+
   // Disbursement feed loaded from journal entries or initial mock
   const [disbursements, setDisbursements] = useState<DisbursementFeedItem[]>(() => loadState('ewa_disbursements', [
     { id: 'TX-44829', employeeName: 'Mg Kyaw', companyName: 'United Petro Co., Ltd', amount: 100000, fee: 2000, netAmount: 98000, channel: 'KBZ Pay', status: 'Success', timestamp: '2026-06-10 10:00', reference: 'EWA-TX-001' },
@@ -55,6 +67,7 @@ export default function App() {
   useEffect(() => { saveState('ewa_settlements', settlements); }, [settlements]);
   useEffect(() => { saveState('ewa_qr_requests', qrRequests); }, [qrRequests]);
   useEffect(() => { saveState('ewa_disbursements', disbursements); }, [disbursements]);
+  useEffect(() => { saveState('ewa_validation_rules', rules); }, [rules]);
 
   // Counting badges
   const pendingSettlementsCount = settlements.filter(s => s.status === 'Pending' || s.status === 'Maker Approved').length;
@@ -247,22 +260,24 @@ export default function App() {
         pendingSettlementsCount={pendingSettlementsCount}
         pendingOnboardingCount={pendingOnboardingCount}
         activeCompanyCount={activeCompanyCount}
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
       />
 
       {/* Main Panel Content Scroll Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Navbar Header */}
-        <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 shrink-0 z-20">
+        <header className="h-16 bg-white border-b border-gray-150 flex items-center justify-between px-6 shrink-0 z-20">
           <div className="flex items-center space-x-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
             <span className="text-gray-400">Section</span>
             <i className="fa-solid fa-chevron-right text-[10px] text-gray-300" />
-            <span className="text-amber-950 font-bold">{currentTab.replace('-', ' ')}</span>
+            <span className="text-emerald-950 font-bold">{currentTab.replace('-', ' ')}</span>
           </div>
           <div className="flex items-center space-x-4">
             {/* System Version */}
-            <span className="text-[10px] font-bold font-mono bg-amber-50 text-amber-800 px-2.5 py-0.5 rounded-full border border-amber-100">
-              BUILD v3.0.0
+            <span className="text-[10px] font-bold font-mono bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-100">
+              BUILD v4.0.0
             </span>
             <span className="text-xs text-gray-400 font-medium">Kaung Htet Min (kaunghtetmin.kght@gmail.com)</span>
           </div>
@@ -343,6 +358,24 @@ export default function App() {
                 setOnboardings={setOnboardings}
                 companies={companies}
                 setCompanies={setCompanies}
+              />
+            )}
+
+            {/* Bulk Notification Command Center */}
+            {currentTab === 'notifications' && (
+              <NotificationCenter
+                companies={companies}
+                employees={employees}
+              />
+            )}
+
+            {/* DMN Decision Validation Engine Rules */}
+            {currentTab === 'validation-engine' && (
+              <ValidationEngine
+                companies={companies}
+                employees={employees}
+                rules={rules}
+                setRules={setRules}
               />
             )}
 

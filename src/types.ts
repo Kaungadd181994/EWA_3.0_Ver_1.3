@@ -163,3 +163,44 @@ export interface QRProcessingRequest {
   uploadedAt: string;
   processedAt?: string;
 }
+
+// --- Notification Center Types ---
+export type NotificationChannel = 'sms' | 'email' | 'push';
+
+export interface NotificationTemplate {
+  id: string;
+  name: string;
+  channel: NotificationChannel;
+  subject?: string;
+  content: string; // supports {{name}}, {{amount}}, {{fee}}, {{company}}, {{reference}}
+  createdAt: string;
+}
+
+export interface NotificationLog {
+  id: string;
+  recipientName: string;
+  recipientContact: string; // phone, email, or user token
+  channel: NotificationChannel;
+  subject?: string;
+  content: string;
+  status: 'Sent' | 'Failed' | 'Scheduled';
+  scheduledTime?: string;
+  createdAt: string;
+}
+
+// --- DMN Validation Rules Types ---
+export type DMNInputField = 'amount' | 'salary_percentage' | 'monthly_count' | 'utilization_percent' | 'nrc_verified' | 'payroll_frozen';
+export type DMNOperator = '>' | '<' | '==' | '!=' | 'matches' | 'contains';
+export type DMNAction = 'ALLOW' | 'BLOCK' | 'CHECKER_REQUIRED';
+
+export interface ValidationRule {
+  id: string;
+  name: string;
+  inputField: DMNInputField;
+  operator: DMNOperator;
+  value: string;
+  action: DMNAction;
+  errorMessage: string;
+  enabled: boolean;
+  priority: number;
+}
