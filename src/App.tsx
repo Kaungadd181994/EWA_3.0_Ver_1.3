@@ -10,7 +10,7 @@ import BudgetAnalysis from './components/BudgetAnalysis';
 import NotificationCenter from './components/NotificationCenter';
 import ValidationEngine from './components/ValidationEngine';
 
-import { Company, Employee, User, FeeConfig, JournalEntry, FormSchema, CompanyOnboarding, SettlementRequest, QRProcessingRequest, DisbursementFeedItem, ValidationRule } from './types';
+import { Company, Employee, User, FeeConfig, JournalEntry, FormSchema, CompanyOnboarding, SettlementRequest, QRProcessingRequest, DisbursementFeedItem, ValidationRule, SystemAuditLog } from './types';
 import { 
   SEED_COMPANIES, 
   SEED_EMPLOYEES, 
@@ -57,6 +57,57 @@ export default function App() {
     { id: 'rule-5', name: 'Maker Checker Double Verification', inputField: 'amount', operator: '>', value: '300000', action: 'CHECKER_REQUIRED', errorMessage: 'Escalated [DMN-005]: High-amount transaction (> {{limit}} MMK) requires Maker-Checker secondary audit approval.', enabled: true, priority: 60 }
   ]));
 
+  // System Audit Logs State
+  const [auditLogs, setAuditLogs] = useState<SystemAuditLog[]>(() => loadState('ewa_audit_logs', [
+    {
+      id: 'audit-1',
+      category: 'Fee Configuration',
+      action: 'Modified global EWA fee model',
+      performedBy: 'Daw Mya Sandar (Admin HR)',
+      previousValue: 'Percentage Model (2.5%)',
+      newValue: 'Flat Rate Model (3,500 MMK)',
+      timestamp: '2026-06-25 10:32:15'
+    },
+    {
+      id: 'audit-2',
+      category: 'Validation Rules',
+      action: 'Enabled Maker Checker Double Verification rule',
+      performedBy: 'Daw Mya Sandar (Admin HR)',
+      previousValue: 'Rule Disabled',
+      newValue: 'Rule Enabled (Trigger limit > 300,000 MMK)',
+      timestamp: '2026-06-26 14:15:00'
+    },
+    {
+      id: 'audit-3',
+      category: 'Fee Configuration',
+      action: 'Adjusted Payroll Freeze Cut-off Day',
+      performedBy: 'U Tin Aung (Branch HR)',
+      previousValue: 'Freeze Day: 25th',
+      newValue: 'Freeze Day: 24th',
+      timestamp: '2026-06-28 09:44:12'
+    }
+  ]));
+
+  const addAuditLog = (
+    category: 'Fee Configuration' | 'Validation Rules',
+    action: string,
+    previousValue: string,
+    newValue: string,
+    performedBy: string = 'Daw Mya Sandar (Admin HR)'
+  ) => {
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const newLog: SystemAuditLog = {
+      id: `audit-${Date.now()}`,
+      category,
+      action,
+      performedBy,
+      previousValue,
+      newValue,
+      timestamp
+    };
+    setAuditLogs(prev => [newLog, ...prev]);
+  };
+
   // Disbursement feed loaded from journal entries or initial mock
   const [disbursements, setDisbursements] = useState<DisbursementFeedItem[]>(() => loadState('ewa_disbursements', [
     { id: 'TX-44829', employeeName: 'Mg Kyaw', companyName: 'United Petro Co., Ltd', amount: 100000, fee: 2000, netAmount: 98000, channel: 'KBZ Pay', status: 'Success', timestamp: '2026-06-10 10:00', reference: 'EWA-TX-001' },
@@ -76,6 +127,7 @@ export default function App() {
   useEffect(() => { saveState('ewa_qr_requests', qrRequests); }, [qrRequests]);
   useEffect(() => { saveState('ewa_disbursements', disbursements); }, [disbursements]);
   useEffect(() => { saveState('ewa_validation_rules', rules); }, [rules]);
+  useEffect(() => { saveState('ewa_audit_logs', auditLogs); }, [auditLogs]);
 
   // Counting badges
   const pendingSettlementsCount = settlements.filter(s => s.status === 'Pending' || s.status === 'Maker Approved').length;
@@ -364,7 +416,7 @@ export default function App() {
             )}
 
             {/* Admin and CRUD configuration Routes */}
-            {['companies', 'employees', 'users', 'fee-config'].includes(currentTab) && (
+            {['companies', 'employees', 'users', 'fee-config', 'system-audit'].includes(currentTab) && (
               <AdminCRUD
                 companies={companies}
                 setCompanies={setCompanies}
@@ -376,6 +428,8 @@ export default function App() {
                 setFeeConfig={setFeeConfig}
                 activeSubTab={currentTab}
                 disbursements={disbursements}
+                auditLogs={auditLogs}
+                addAuditLog={addAuditLog}
               />
             )}
 
@@ -412,6 +466,7 @@ export default function App() {
                 employees={employees}
                 rules={rules}
                 setRules={setRules}
+                addAuditLog={addAuditLog}
               />
             )}
 

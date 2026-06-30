@@ -6,9 +6,16 @@ interface ValidationEngineProps {
   employees: Employee[];
   rules: ValidationRule[];
   setRules: React.Dispatch<React.SetStateAction<ValidationRule[]>>;
+  addAuditLog?: (
+    category: 'Fee Configuration' | 'Validation Rules',
+    action: string,
+    previousValue: string,
+    newValue: string,
+    performedBy?: string
+  ) => void;
 }
 
-export default function ValidationEngine({ companies, employees, rules, setRules }: ValidationEngineProps) {
+export default function ValidationEngine({ companies, employees, rules, setRules, addAuditLog }: ValidationEngineProps) {
   // Navigation Tabs inside Validation Control Panel
   const [activeTab, setActiveTab] = useState<'decision-table' | 'playground' | 'freeze-config'>('decision-table');
 
@@ -78,16 +85,42 @@ export default function ValidationEngine({ companies, employees, rules, setRules
     setRuleValue('');
     setRuleErrorMsg('');
     showToast(`DMN Decision Rule "${ruleName}" successfully generated.`);
+    if (addAuditLog) {
+      addAuditLog(
+        'Validation Rules',
+        `Created decision validation rule "${newRule.name}"`,
+        'Non-existent',
+        `Field: ${newRule.inputField}, Op: ${newRule.operator}, Val: ${newRule.value}, Action: ${newRule.action}, Priority: ${newRule.priority}`
+      );
+    }
   };
 
   const handleDeleteRule = (id: string) => {
+    const targetRule = rules.find(r => r.id === id);
     setRules(prev => prev.filter(r => r.id !== id));
     showToast('Rule deleted from decision matrix.');
+    if (addAuditLog && targetRule) {
+      addAuditLog(
+        'Validation Rules',
+        `Deleted decision validation rule "${targetRule.name}"`,
+        `Field: ${targetRule.inputField}, Op: ${targetRule.operator}, Val: ${targetRule.value}, Action: ${targetRule.action}`,
+        'Deleted'
+      );
+    }
   };
 
   const handleToggleRule = (id: string) => {
+    const targetRule = rules.find(r => r.id === id);
     setRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
     showToast('DMN Rule configuration status updated.');
+    if (addAuditLog && targetRule) {
+      addAuditLog(
+        'Validation Rules',
+        `${targetRule.enabled ? 'Disabled' : 'Enabled'} decision validation rule "${targetRule.name}"`,
+        `Status: ${targetRule.enabled ? 'Enabled' : 'Disabled'}`,
+        `Status: ${targetRule.enabled ? 'Disabled' : 'Enabled'}`
+      );
+    }
   };
 
   // Run sequential DMN Decision Logic

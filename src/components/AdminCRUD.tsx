@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Company, Employee, User, FeeConfig, DisbursementFeedItem } from '../types';
+import { Company, Employee, User, FeeConfig, DisbursementFeedItem, SystemAuditLog } from '../types';
 
 interface AdminCRUDProps {
   companies: Company[];
@@ -12,6 +12,14 @@ interface AdminCRUDProps {
   setFeeConfig: (config: FeeConfig) => void;
   activeSubTab: string;
   disbursements?: DisbursementFeedItem[];
+  auditLogs?: SystemAuditLog[];
+  addAuditLog?: (
+    category: 'Fee Configuration' | 'Validation Rules',
+    action: string,
+    previousValue: string,
+    newValue: string,
+    performedBy?: string
+  ) => void;
 }
 
 export default function AdminCRUD({
@@ -24,10 +32,13 @@ export default function AdminCRUD({
   feeConfig,
   setFeeConfig,
   activeSubTab,
-  disbursements = []
+  disbursements = [],
+  auditLogs = [],
+  addAuditLog
 }: AdminCRUDProps) {
   
-  // Modals state
+  // Track fee config snapshots for audit logs comparison
+  const [lastSavedFeeConfig, setLastSavedFeeConfig] = useState<FeeConfig>({ ...feeConfig });
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
@@ -41,6 +52,11 @@ export default function AdminCRUD({
   const [companySearch, setCompanySearch] = useState('');
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [userSearch, setUserSearch] = useState('');
+  
+  // Audit Log search, filter & page state
+  const [auditSearch, setAuditSearch] = useState('');
+  const [auditCategory, setAuditCategory] = useState<'All' | 'Fee Configuration' | 'Validation Rules'>('All');
+  const [auditPage, setAuditPage] = useState(1);
 
   // Toasts
   const [toast, setToast] = useState<string | null>(null);
@@ -1238,6 +1254,167 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
   };
 
   // Fee Configuration
+  const handleSaveFeeConfig = () => {
+    const changes: string[] = [];
+    
+    if (feeConfig.model !== lastSavedFeeConfig.model) {
+      changes.push(`Fee Model: ${lastSavedFeeConfig.model} -> ${feeConfig.model}`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Changed global EWA fee model',
+          `Model: ${lastSavedFeeConfig.model}`,
+          `Model: ${feeConfig.model}`
+        );
+      }
+    }
+    if (feeConfig.flatFee !== lastSavedFeeConfig.flatFee) {
+      changes.push(`Flat Fee: ${lastSavedFeeConfig.flatFee} MMK -> ${feeConfig.flatFee} MMK`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Updated flat rate transaction fee',
+          `${lastSavedFeeConfig.flatFee} MMK`,
+          `${feeConfig.flatFee} MMK`
+        );
+      }
+    }
+    if (feeConfig.percentage !== lastSavedFeeConfig.percentage) {
+      changes.push(`Fee Percentage: ${lastSavedFeeConfig.percentage}% -> ${feeConfig.percentage}%`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Updated fee percentage multiplier',
+          `${lastSavedFeeConfig.percentage}%`,
+          `${feeConfig.percentage}%`
+        );
+      }
+    }
+    if (feeConfig.minAmount !== lastSavedFeeConfig.minAmount) {
+      changes.push(`Min EWA: ${lastSavedFeeConfig.minAmount.toLocaleString()} MMK -> ${feeConfig.minAmount.toLocaleString()} MMK`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Adjusted Minimum EWA advance limit',
+          `${lastSavedFeeConfig.minAmount.toLocaleString()} MMK`,
+          `${feeConfig.minAmount.toLocaleString()} MMK`
+        );
+      }
+    }
+    if (feeConfig.maxAmount !== lastSavedFeeConfig.maxAmount) {
+      changes.push(`Max EWA: ${lastSavedFeeConfig.maxAmount.toLocaleString()} MMK -> ${feeConfig.maxAmount.toLocaleString()} MMK`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Adjusted Maximum EWA advance limit',
+          `${lastSavedFeeConfig.maxAmount.toLocaleString()} MMK`,
+          `${feeConfig.maxAmount.toLocaleString()} MMK`
+        );
+      }
+    }
+    if (feeConfig.applyStartDay !== lastSavedFeeConfig.applyStartDay) {
+      changes.push(`Start Day: Day ${lastSavedFeeConfig.applyStartDay} -> Day ${feeConfig.applyStartDay}`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Modified monthly drawing window start day',
+          `Day ${lastSavedFeeConfig.applyStartDay}`,
+          `Day ${feeConfig.applyStartDay}`
+        );
+      }
+    }
+    if (feeConfig.applyEndDay !== lastSavedFeeConfig.applyEndDay) {
+      changes.push(`End Day: Day ${lastSavedFeeConfig.applyEndDay} -> Day ${feeConfig.applyEndDay}`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Modified monthly drawing window end day',
+          `Day ${lastSavedFeeConfig.applyEndDay}`,
+          `Day ${feeConfig.applyEndDay}`
+        );
+      }
+    }
+    if (feeConfig.freezeDay !== lastSavedFeeConfig.freezeDay) {
+      changes.push(`Freeze Day: Day ${lastSavedFeeConfig.freezeDay} -> Day ${feeConfig.freezeDay}`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Adjusted Payroll Freeze Cut-off Day',
+          `Day ${lastSavedFeeConfig.freezeDay}`,
+          `Day ${feeConfig.freezeDay}`
+        );
+      }
+    }
+    if (feeConfig.gapDaysAfterPayroll !== lastSavedFeeConfig.gapDaysAfterPayroll) {
+      changes.push(`Gap Days: ${lastSavedFeeConfig.gapDaysAfterPayroll} -> ${feeConfig.gapDaysAfterPayroll}`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Updated gap days before next cycle',
+          `${lastSavedFeeConfig.gapDaysAfterPayroll} days`,
+          `${feeConfig.gapDaysAfterPayroll} days`
+        );
+      }
+    }
+    if (feeConfig.lateReminderDays !== lastSavedFeeConfig.lateReminderDays) {
+      changes.push(`Reminder Days: ${lastSavedFeeConfig.lateReminderDays} -> ${feeConfig.lateReminderDays}`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Modified Late Reminder Trigger days threshold',
+          `${lastSavedFeeConfig.lateReminderDays} days`,
+          `${feeConfig.lateReminderDays} days`
+        );
+      }
+    }
+    if (feeConfig.maxMonthlyRequests !== lastSavedFeeConfig.maxMonthlyRequests) {
+      changes.push(`Max Monthly Requests: ${lastSavedFeeConfig.maxMonthlyRequests} -> ${feeConfig.maxMonthlyRequests}`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Updated Max Monthly EWA requests allowed (Velocity limit)',
+          `${lastSavedFeeConfig.maxMonthlyRequests} requests`,
+          `${feeConfig.maxMonthlyRequests} requests`
+        );
+      }
+    }
+    if (feeConfig.payer !== lastSavedFeeConfig.payer) {
+      changes.push(`Payer: ${lastSavedFeeConfig.payer} -> ${feeConfig.payer}`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Fee Configuration',
+          'Switched EWA Fee Settlement Payer Model',
+          `Payer: ${lastSavedFeeConfig.payer}`,
+          `Payer: ${feeConfig.payer}`
+        );
+      }
+    }
+
+    // Bracket rate checks
+    feeConfig.tiers.forEach((tier, i) => {
+      const lastTier = lastSavedFeeConfig.tiers[i];
+      if (lastTier && tier.rate !== lastTier.rate) {
+        changes.push(`Bracket ${i+1} Rate: ${lastTier.rate} MMK -> ${tier.rate} MMK`);
+        if (addAuditLog) {
+          addAuditLog(
+            'Fee Configuration',
+            `Modified Tiered Bracket ${i+1} pricing rate`,
+            `${lastTier.rate} MMK`,
+            `${tier.rate} MMK`
+          );
+        }
+      }
+    });
+
+    setLastSavedFeeConfig({ ...feeConfig });
+    
+    if (changes.length > 0) {
+      showToast(`Fee configurations committed. Saved ${changes.length} sensitive updates in system audit log.`);
+    } else {
+      showToast('Fee parameters and configurations are already up-to-date.');
+    }
+  };
+
   const renderFeeConfig = () => {
     return (
       <div className="space-y-6">
@@ -1448,7 +1625,7 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
 
           <div className="pt-4 border-t border-gray-100 flex justify-end">
             <button
-              onClick={() => showToast('Fee parameters and GoRules committed to system state successfully.')}
+              onClick={handleSaveFeeConfig}
               className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs rounded-lg flex items-center space-x-2 transition-colors duration-150 cursor-pointer"
             >
               <i className="fa-solid fa-floppy-disk" />
@@ -1456,6 +1633,304 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
             </button>
           </div>
 
+        </div>
+      </div>
+    );
+  };
+
+  // System Audit Logs Viewer
+  const renderSystemAudit = () => {
+    // 1. Filtering
+    const filteredLogs = auditLogs.filter(log => {
+      const matchesSearch = 
+        log.action.toLowerCase().includes(auditSearch.toLowerCase()) ||
+        log.performedBy.toLowerCase().includes(auditSearch.toLowerCase()) ||
+        log.previousValue.toLowerCase().includes(auditSearch.toLowerCase()) ||
+        log.newValue.toLowerCase().includes(auditSearch.toLowerCase());
+      
+      const matchesCategory = auditCategory === 'All' || log.category === auditCategory;
+      
+      return matchesSearch && matchesCategory;
+    });
+
+    // 2. Pagination details
+    const itemsPerPage = 8;
+    const totalItems = filteredLogs.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const startIndex = (auditPage - 1) * itemsPerPage;
+    const paginatedLogs = filteredLogs.slice(startIndex, startIndex + itemsPerPage);
+
+    const feeConfigCount = auditLogs.filter(l => l.category === 'Fee Configuration').length;
+    const validationCount = auditLogs.filter(l => l.category === 'Validation Rules').length;
+    const latestChange = auditLogs[0]?.timestamp || 'Never';
+
+    const handleExportAuditCSV = () => {
+      const headers = ['ID', 'Category', 'Action', 'Performed By', 'Previous Value', 'New Value', 'Timestamp'];
+      const rows = filteredLogs.map(log => [
+        log.id,
+        log.category,
+        `"${log.action.replace(/"/g, '""')}"`,
+        `"${log.performedBy.replace(/"/g, '""')}"`,
+        `"${log.previousValue.replace(/"/g, '""')}"`,
+        `"${log.newValue.replace(/"/g, '""')}"`,
+        log.timestamp
+      ]);
+      
+      const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `system_audit_trail_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Successfully exported system audit trail to CSV format.');
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Maker-Checker System Audit Trail Ledger</h3>
+            <p className="text-xs text-gray-500">Immutable operations log tracking modifications made to system-wide transaction fee schedules, drawing windows, and DMN validation constraints.</p>
+          </div>
+          <button
+            onClick={handleExportAuditCSV}
+            disabled={filteredLogs.length === 0}
+            className="px-4 py-2 bg-emerald-750 hover:bg-emerald-800 disabled:opacity-50 text-white text-xs font-semibold rounded-lg flex items-center space-x-2 transition-colors cursor-pointer"
+          >
+            <i className="fa-solid fa-file-csv" />
+            <span>Export Trail to CSV</span>
+          </button>
+        </div>
+
+        {/* Top summary cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <button
+            onClick={() => { setAuditCategory('All'); setAuditPage(1); }}
+            className={`p-4 rounded-xl border text-left transition-all ${
+              auditCategory === 'All'
+                ? 'border-emerald-600 bg-emerald-50/20 ring-1 ring-emerald-500'
+                : 'bg-white border-gray-150 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Audit Logs</span>
+              <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
+                <i className="fa-solid fa-list-ul text-xs" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <span className="text-xl font-bold font-mono text-gray-950">{auditLogs.length}</span>
+              <span className="text-[10px] text-gray-400 block mt-0.5">All configuration updates</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => { setAuditCategory('Fee Configuration'); setAuditPage(1); }}
+            className={`p-4 rounded-xl border text-left transition-all ${
+              auditCategory === 'Fee Configuration'
+                ? 'border-amber-600 bg-amber-50/20 ring-1 ring-amber-500'
+                : 'bg-white border-gray-150 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fee Config Logs</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                <i className="fa-solid fa-sliders text-xs" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <span className="text-xl font-bold font-mono text-gray-950">{feeConfigCount}</span>
+              <span className="text-[10px] text-gray-400 block mt-0.5">Fee & pricing tweaks</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => { setAuditCategory('Validation Rules'); setAuditPage(1); }}
+            className={`p-4 rounded-xl border text-left transition-all ${
+              auditCategory === 'Validation Rules'
+                ? 'border-indigo-600 bg-indigo-50/20 ring-1 ring-indigo-500'
+                : 'bg-white border-gray-150 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Validation Rules</span>
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <i className="fa-solid fa-shield-halved text-xs" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <span className="text-xl font-bold font-mono text-gray-950">{validationCount}</span>
+              <span className="text-[10px] text-gray-400 block mt-0.5">DMN validation rule updates</span>
+            </div>
+          </button>
+
+          <div className="p-4 bg-white rounded-xl border border-gray-150 text-left">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Latest Activity</span>
+              <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                <i className="fa-solid fa-clock text-xs" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <span className="text-xs font-bold font-mono text-gray-950 truncate block mt-1">{latestChange}</span>
+              <span className="text-[10px] text-gray-400 block mt-1">Last structural change</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter controls panel */}
+        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
+          <div className="relative w-full md:max-w-md">
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <i className="fa-solid fa-magnifying-glass" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search audit trail logs (e.g., modified, flat fee, Daw Mya)..."
+              value={auditSearch}
+              onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(1); }}
+              className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-all font-sans"
+            />
+          </div>
+
+          <div className="flex items-center space-x-3 w-full md:w-auto justify-end">
+            <span className="font-semibold text-gray-500 whitespace-nowrap">Filter Category:</span>
+            <select
+              value={auditCategory}
+              onChange={(e) => { setAuditCategory(e.target.value as any); setAuditPage(1); }}
+              className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold"
+            >
+              <option value="All">All Categories</option>
+              <option value="Fee Configuration">Fee Configuration</option>
+              <option value="Validation Rules">Validation Rules</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Table list of logs */}
+        <div className="bg-white rounded-xl border border-gray-150 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-150 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="p-4 w-40">Timestamp</th>
+                  <th className="p-4 w-40">Category</th>
+                  <th className="p-4">Action</th>
+                  <th className="p-4">Previous Value</th>
+                  <th className="p-4">New Value</th>
+                  <th className="p-4 w-48">Authorized Actor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 font-sans">
+                {paginatedLogs.length > 0 ? (
+                  paginatedLogs.map((log) => {
+                    const isFee = log.category === 'Fee Configuration';
+                    return (
+                      <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="p-4 font-mono text-[11px] text-gray-500 whitespace-nowrap">
+                          {log.timestamp}
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide inline-flex items-center space-x-1.5 ${
+                            isFee 
+                              ? 'bg-amber-50 text-amber-800 border border-amber-100' 
+                              : 'bg-indigo-50 text-indigo-800 border border-indigo-100'
+                          }`}>
+                            <i className={`text-[10px] ${isFee ? 'fa-solid fa-sliders' : 'fa-solid fa-shield-halved'}`} />
+                            <span>{log.category}</span>
+                          </span>
+                        </td>
+                        <td className="p-4 font-semibold text-gray-900">
+                          {log.action}
+                        </td>
+                        <td className="p-4 font-mono text-[10px] text-rose-800 max-w-xs break-all">
+                          <div className="bg-rose-50/40 px-2 py-1.5 rounded-lg border border-rose-100/50 flex items-center space-x-1.5">
+                            <i className="fa-solid fa-ban text-[10px]" />
+                            <span className="line-through">{log.previousValue}</span>
+                          </div>
+                        </td>
+                        <td className="p-4 font-mono text-[10px] text-emerald-800 max-w-xs break-all">
+                          <div className="bg-emerald-50/40 px-2 py-1.5 rounded-lg border border-emerald-100/50 flex items-center space-x-1.5">
+                            <i className="fa-solid fa-circle-check text-[10px]" />
+                            <span className="font-bold">{log.newValue}</span>
+                          </div>
+                        </td>
+                        <td className="p-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-[10px] border border-emerald-100 uppercase">
+                              {log.performedBy.charAt(0)}
+                            </div>
+                            <span className="font-medium text-gray-700 text-xs">{log.performedBy}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="p-12 text-center text-gray-400">
+                      <div className="max-w-xs mx-auto space-y-3">
+                        <div className="w-12 h-12 bg-gray-50 border border-gray-150 rounded-2xl flex items-center justify-center text-gray-400 mx-auto text-lg shadow-inner">
+                          <i className="fa-solid fa-clipboard-question" />
+                        </div>
+                        <p className="font-bold text-gray-700 text-sm">No Audit Logs Found</p>
+                        <p className="text-xs text-gray-400">We couldn't find any configuration logs matching "{auditSearch}". Try broadening your query or choosing another category.</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table pagination footer */}
+          {totalItems > 0 && (
+            <div className="p-4 bg-gray-50 border-t border-gray-150 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
+              <span className="text-gray-500 font-sans">
+                Showing <span className="font-bold text-gray-800">{startIndex + 1}</span> to{' '}
+                <span className="font-bold text-gray-800">{Math.min(startIndex + itemsPerPage, totalItems)}</span> of{' '}
+                <span className="font-bold text-gray-800">{totalItems}</span> audit entries
+              </span>
+
+              <div className="flex items-center space-x-1.5">
+                <button
+                  disabled={auditPage === 1}
+                  onClick={() => setAuditPage(p => p - 1)}
+                  className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-white cursor-pointer transition-colors font-bold flex items-center space-x-1"
+                >
+                  <i className="fa-solid fa-angle-left" />
+                  <span>Prev</span>
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setAuditPage(page)}
+                    className={`px-3 py-1.5 rounded-lg border font-bold font-mono transition-colors cursor-pointer ${
+                      auditPage === page
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  disabled={auditPage === totalPages}
+                  onClick={() => setAuditPage(p => p + 1)}
+                  className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-white cursor-pointer transition-colors font-bold flex items-center space-x-1"
+                >
+                  <span>Next</span>
+                  <i className="fa-solid fa-angle-right" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1471,6 +1946,8 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
         return renderUsers();
       case 'fee-config':
         return renderFeeConfig();
+      case 'system-audit':
+        return renderSystemAudit();
       default:
         return renderCompanies();
     }

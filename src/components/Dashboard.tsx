@@ -6,7 +6,13 @@ interface DashboardProps {
   companies: Company[];
   employees: Employee[];
   journalEntries: JournalEntry[];
-  addSimulatedTransaction: (amount: number, type: 'disburse' | 'repay', employeeId: number) => { success: boolean; message: string };
+  addSimulatedTransaction: (
+    amount: number,
+    type: 'disburse' | 'repay',
+    employeeId: number,
+    channel?: string,
+    repaymentMethod?: string
+  ) => { success: boolean; message: string };
   setCurrentTab: (tab: string) => void;
 }
 

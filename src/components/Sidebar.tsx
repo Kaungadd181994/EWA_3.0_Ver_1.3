@@ -199,6 +199,7 @@ export default function Sidebar({
               {navItem('employees', 'Employee Directory', 'fa-solid fa-users')}
               {navItem('users', 'System Users', 'fa-solid fa-user-gear')}
               {navItem('fee-config', 'Fee Configuration', 'fa-solid fa-sliders')}
+              {navItem('system-audit', 'System Audit Log', 'fa-solid fa-clock-rotate-left')}
               {navItem('form-creator', 'Dynamic Form Creator', 'fa-solid fa-laptop-code')}
               {navItem('notifications', 'Bulk Notification Portal', 'fa-solid fa-paper-plane')}
             </div>

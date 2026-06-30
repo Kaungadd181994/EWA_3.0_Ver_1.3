@@ -226,3 +226,14 @@ export interface ValidationRule {
   enabled: boolean;
   priority: number;
 }
+
+export interface SystemAuditLog {
+  id: string;
+  category: 'Fee Configuration' | 'Validation Rules';
+  action: string; // e.g. 'Changed Flat Rate Amount', 'Created Validation Rule'
+  performedBy: string; // user name, e.g. 'Daw Mya Sandar'
+  previousValue: string; // serialized previous state or description
+  newValue: string; // serialized new state or description
+  timestamp: string;
+}
+
