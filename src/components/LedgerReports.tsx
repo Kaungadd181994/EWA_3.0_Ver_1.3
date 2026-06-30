@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Company, Employee, JournalEntry, GLAccount } from '../types';
+import { Company, Employee, JournalEntry, GLAccount, DisbursementFeedItem, SettlementRequest } from '../types';
 import { CHART_OF_ACCOUNTS, getAccountBalances } from '../data';
 
 interface LedgerReportsProps {
   companies: Company[];
   employees: Employee[];
   journalEntries: JournalEntry[];
+  disbursements: DisbursementFeedItem[];
+  settlements: SettlementRequest[];
   currentReportTab: string; // which report sub-tab
 }
 
@@ -13,6 +15,8 @@ export default function LedgerReports({
   companies,
   employees,
   journalEntries,
+  disbursements,
+  settlements,
   currentReportTab
 }: LedgerReportsProps) {
   const [selectedAccountCode, setSelectedAccountCode] = useState<string>('1100');
@@ -690,6 +694,44 @@ export default function LedgerReports({
             </div>
           </div>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+            <h4 className="text-sm font-bold text-gray-900 mb-3">Disbursement by Channel</h4>
+            <div className="space-y-3">
+              {Object.entries(
+                disbursements.reduce((acc, d) => {
+                  acc[d.channel] = (acc[d.channel] || 0) + d.amount;
+                  return acc;
+                }, {} as Record<string, number>)
+              ).map(([channel, amt]) => (
+                <div key={channel} className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
+                  <span className="font-semibold text-gray-600">{channel}</span>
+                  <span className="font-mono font-bold text-gray-900">{amt.toLocaleString()} MMK</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+            <h4 className="text-sm font-bold text-gray-900 mb-3">Repayment by Source Method</h4>
+            <div className="space-y-3">
+              {Object.entries(
+                settlements.reduce((acc, s) => {
+                  const method = s.repaymentMethod || 'Bank';
+                  acc[method] = (acc[method] || 0) + s.amount;
+                  return acc;
+                }, {} as Record<string, number>)
+              ).map(([method, amt]) => (
+                <div key={method} className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
+                  <span className="font-semibold text-gray-600">{method}</span>
+                  <span className="font-mono font-bold text-gray-900">{amt.toLocaleString()} MMK</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
       </div>
     );
   };

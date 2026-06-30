@@ -6,7 +6,7 @@ import AdminCRUD from './components/AdminCRUD';
 import FormCreator from './components/FormCreator';
 import OnboardingWizard from './components/OnboardingWizard';
 import RiskAndOps from './components/RiskAndOps';
-import PublishGitHub from './components/PublishGitHub';
+import BudgetAnalysis from './components/BudgetAnalysis';
 import NotificationCenter from './components/NotificationCenter';
 import ValidationEngine from './components/ValidationEngine';
 
@@ -33,7 +33,15 @@ export default function App() {
   const [companies, setCompanies] = useState<Company[]>(() => loadState('ewa_companies', SEED_COMPANIES));
   const [employees, setEmployees] = useState<Employee[]>(() => loadState('ewa_employees', SEED_EMPLOYEES));
   const [users, setUsers] = useState<User[]>(() => loadState('ewa_users', SEED_USERS));
-  const [feeConfig, setFeeConfig] = useState<FeeConfig>(() => loadState('ewa_fee_config', DEFAULT_FEE_CONFIG));
+  const [feeConfig, setFeeConfig] = useState<FeeConfig>(() => {
+    const loaded = loadState('ewa_fee_config', DEFAULT_FEE_CONFIG);
+    if (loaded && Array.isArray(loaded.tiers)) {
+      loaded.tiers.forEach((t: any) => {
+        if (t.max === null) t.max = Infinity;
+      });
+    }
+    return loaded;
+  });
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => loadState('ewa_journal_entries', SEED_JOURNAL_ENTRIES));
   const [forms, setForms] = useState<FormSchema[]>(() => loadState('ewa_forms', SEED_FORMS));
   const [onboardings, setOnboardings] = useState<CompanyOnboarding[]>(() => loadState('ewa_onboardings', SEED_ONBOARDINGS));
@@ -78,7 +86,9 @@ export default function App() {
   const addSimulatedTransaction = (
     amount: number,
     type: 'disburse' | 'repay',
-    employeeId: number
+    employeeId: number,
+    channel: string = 'MoMoney',
+    repaymentMethod: string = 'Bank'
   ): { success: boolean; message: string } => {
     
     const emp = employees.find(e => e.id === employeeId);
@@ -100,10 +110,22 @@ export default function App() {
         return { success: false, message: 'Validation Blocked [EWA-002]: EWA access not enabled. Contact HR.' };
       }
 
+      const effectiveFreezeDay = company.config?.payrollCutoffDay || feeConfig.freezeDay;
+      const effectiveMaxPercent = company.config?.maxPercentSalary || feeConfig.maxPercentSalary;
+      const effectiveFeeModel = (company.config?.feeModel && company.config.feeModel !== 'system_default') ? company.config.feeModel : feeConfig.model;
+      
+      const effectiveMaxRequests = company.config?.maxMonthlyRequests || feeConfig.maxMonthlyRequests;
+
       // Check 3: Drawing Window (System simulated date is 2026-06-29, freeze on 24th)
       const currentDay = 29; // simulated system day
-      if (currentDay >= feeConfig.freezeDay) {
+      if (currentDay >= effectiveFreezeDay) {
         return { success: false, message: 'Validation Blocked [EWA-003]: Request period has ended for this cycle (Payroll Frozen).' };
+      }
+
+      // Add Check for Gap Days
+      const gapEndDay = effectiveFreezeDay + (company.config?.gapDaysAfterPayroll ?? feeConfig.gapDaysAfterPayroll);
+      if (currentDay > effectiveFreezeDay && currentDay <= gapEndDay) {
+        return { success: false, message: `Validation Blocked [EWA-003]: We are currently in the ${company.config?.gapDaysAfterPayroll ?? feeConfig.gapDaysAfterPayroll}-day settlement gap period. EWA will resume shortly.` };
       }
 
       // Check 4: Duplicate Pending Checks
@@ -113,9 +135,9 @@ export default function App() {
       }
 
       // Check 5: Limit Checks
-      const maxAllowed = (emp.salary * feeConfig.maxPercentSalary) / 100;
+      const maxAllowed = (emp.salary * effectiveMaxPercent) / 100;
       if (amount > maxAllowed) {
-        return { success: false, message: `Validation Blocked [EWA-005]: Amount exceeds available limit of ${maxAllowed.toLocaleString()} MMK (max ${feeConfig.maxPercentSalary}% of base salary).` };
+        return { success: false, message: `Validation Blocked [EWA-005]: Amount exceeds available limit of ${maxAllowed.toLocaleString()} MMK (max ${effectiveMaxPercent}% of base salary).` };
       }
       if (amount < feeConfig.minAmount || amount > feeConfig.maxAmount) {
         return { success: false, message: `Validation Blocked [EWA-005]: Amount must be between ${feeConfig.minAmount.toLocaleString()} and ${feeConfig.maxAmount.toLocaleString()} MMK.` };
@@ -123,8 +145,8 @@ export default function App() {
 
       // Check 6: Velocity checks (Simulated monthly request constraints)
       const empRequestsThisMonth = disbursements.filter(d => d.employeeName === emp.name).length;
-      if (empRequestsThisMonth >= feeConfig.maxMonthlyRequests) {
-        return { success: false, message: 'Validation Blocked [EWA-006]: Maximum monthly requests reached.' };
+      if (empRequestsThisMonth >= effectiveMaxRequests) {
+        return { success: false, message: `Validation Blocked [EWA-006]: Maximum monthly requests (${effectiveMaxRequests}) reached.` };
       }
 
       // Check 7: Budget Availability Checks
@@ -135,9 +157,9 @@ export default function App() {
 
       // All 7 Checks Passed! Run GoRule Fee calculation (Flat, Percent, or Tiered)
       let fee = feeConfig.flatFee;
-      if (feeConfig.model === 'percentage') {
+      if (effectiveFeeModel === 'percentage') {
         fee = Math.round((amount * feeConfig.percentage) / 100);
-      } else if (feeConfig.model === 'tiered') {
+      } else if (effectiveFeeModel === 'tiered') {
         const matchingTier = feeConfig.tiers.find(t => amount > t.min && amount <= t.max);
         fee = matchingTier ? matchingTier.rate : 1500;
       }
@@ -157,7 +179,7 @@ export default function App() {
         amount,
         fee,
         netAmount,
-        channel: 'KBZ Pay',
+        channel,
         status: 'Success',
         timestamp: '2026-06-29 15:45',
         reference: refCode
@@ -220,6 +242,8 @@ export default function App() {
         companyName: company.name,
         amount: outstandingAmt,
         reference: refCode,
+        repaymentMethod: repaymentMethod as any,
+        source: 'Manual',
         status: 'Approved',
         submittedAt: '2026-06-29 15:46',
         verifiedAt: '2026-06-29 15:46',
@@ -304,6 +328,8 @@ export default function App() {
                 companies={companies}
                 employees={employees}
                 journalEntries={journalEntries}
+                disbursements={disbursements}
+                settlements={settlements}
                 currentReportTab={currentTab}
               />
             )}
@@ -324,6 +350,16 @@ export default function App() {
                 disbursements={disbursements}
                 setDisbursements={setDisbursements}
                 activeTab={currentTab}
+              />
+            )}
+
+            {/* Corporate Budget & Exposure Analysis */}
+            {currentTab === 'budget-analysis' && (
+              <BudgetAnalysis
+                companies={companies}
+                employees={employees}
+                feeConfig={feeConfig}
+                setCompanies={setCompanies}
               />
             )}
 
@@ -380,9 +416,6 @@ export default function App() {
             )}
 
             {/* Publish to GitHub Developer Hub */}
-            {currentTab === 'publish-github' && (
-              <PublishGitHub />
-            )}
 
           </div>
         </main>

@@ -240,6 +240,7 @@ export default function Sidebar({
           )}
           {(!collapsedGroups.risk || sidebarCollapsed) && (
             <div className={`mt-1 space-y-0.5 ${!sidebarCollapsed ? 'pl-1.5 border-l border-gray-100 ml-3' : ''}`}>
+              {navItem('budget-analysis', 'Budget & Exposure', 'fa-solid fa-scale-balanced')}
               {navItem('credit-assessment', 'Credit Scoring', 'fa-solid fa-gauge-high')}
               {navItem('ghost-employees', 'Ghost Employees', 'fa-solid fa-ghost')}
               {navItem('overdue-monitoring', 'Overdue Watch', 'fa-solid fa-triangle-exclamation')}
@@ -263,7 +264,6 @@ export default function Sidebar({
           )}
           {(!collapsedGroups.production || sidebarCollapsed) && (
             <div className={`mt-1 space-y-0.5 ${!sidebarCollapsed ? 'pl-1.5 border-l border-gray-100 ml-3' : ''}`}>
-              {navItem('publish-github', 'Publish to GitHub', 'fa-brands fa-github')}
             </div>
           )}
         </div>

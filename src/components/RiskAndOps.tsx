@@ -41,6 +41,13 @@ export default function RiskAndOps({
   const [showQrModal, setShowQrModal] = useState(false);
   const [activeQrReq, setActiveQrReq] = useState<QRProcessingRequest | null>(null);
 
+  // Manual Settlement entry
+  const [showManualSettlementModal, setShowManualSettlementModal] = useState(false);
+  const [manualSettlementCompanyId, setManualSettlementCompanyId] = useState<number>(companies[0]?.id || 1);
+  const [manualSettlementAmount, setManualSettlementAmount] = useState<number>(0);
+  const [manualSettlementMethod, setManualSettlementMethod] = useState<string>('Cash');
+  const [manualSettlementRef, setManualSettlementRef] = useState<string>('');
+
   const triggerToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -124,15 +131,55 @@ export default function RiskAndOps({
     triggerToast('Ghost employee access frozen successfully. Demanded payroll adjustment.');
   };
 
+  const handleManualSettlementSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const company = companies.find(c => c.id === manualSettlementCompanyId);
+    if (!company) return;
+
+    if (manualSettlementAmount <= 0) {
+      triggerToast('Amount must be greater than zero.');
+      return;
+    }
+
+    const ref = manualSettlementRef || `MANUAL-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newSettlement: SettlementRequest = {
+      id: Date.now(),
+      companyId: company.id,
+      companyName: company.name,
+      amount: manualSettlementAmount,
+      reference: ref,
+      repaymentMethod: manualSettlementMethod as any,
+      source: 'Manual',
+      status: 'Pending',
+      submittedAt: new Date().toISOString().slice(0,16).replace('T', ' ')
+    };
+
+    setSettlements(prev => [newSettlement, ...prev]);
+    setShowManualSettlementModal(false);
+    setManualSettlementAmount(0);
+    setManualSettlementRef('');
+    triggerToast(`Manual repayment of ${manualSettlementAmount.toLocaleString()} MMK recorded for ${company.name}`);
+  };
+
   // --- Render Sections ---
 
   // 1. Settlement Queue View
   const renderSettlementQueue = () => {
     return (
       <div className="space-y-4">
-        <div>
-          <h3 className="text-sm font-bold text-gray-900">Maker-Checker Settlement Queue</h3>
-          <p className="text-xs text-gray-500 font-sans">Dual verification pipeline for incoming corporate bank transfers and receipts clearing client outstanding.</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Maker-Checker Settlement Queue</h3>
+            <p className="text-xs text-gray-500 font-sans">Dual verification pipeline for incoming corporate bank transfers and receipts clearing client outstanding.</p>
+          </div>
+          <button
+            onClick={() => setShowManualSettlementModal(true)}
+            className="px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-semibold rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <i className="fa-solid fa-plus" />
+            <span>Record Manual Repayment</span>
+          </button>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
@@ -142,6 +189,7 @@ export default function RiskAndOps({
                 <th className="p-3">Reference ID</th>
                 <th className="p-3">Client Company</th>
                 <th className="p-3">Submitted At</th>
+                <th className="p-3">Method</th>
                 <th className="p-3 text-right">Repay Amount (MMK)</th>
                 <th className="p-3">Status</th>
                 <th className="p-3 text-right">Verification Flow Actions</th>
@@ -158,6 +206,13 @@ export default function RiskAndOps({
                   </td>
                   <td className="p-3 font-semibold text-gray-900">{s.companyName}</td>
                   <td className="p-3 font-sans text-gray-500">{s.submittedAt}</td>
+                  <td className="p-3">
+                    <span className="bg-gray-100 text-gray-700 text-[10px] px-2 py-0.5 rounded font-medium block w-max">
+                      {s.repaymentMethod || 'Bank'}
+                    </span>
+                    {s.source === 'Manual' && <span className="text-[9px] text-amber-600 block mt-0.5 font-semibold">Manual Record</span>}
+                    {s.source === 'API' && <span className="text-[9px] text-blue-600 block mt-0.5 font-semibold">API Sync</span>}
+                  </td>
                   <td className="p-3 text-right font-mono font-bold text-gray-950">{s.amount.toLocaleString()}</td>
                   <td className="p-3">
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
@@ -217,6 +272,76 @@ export default function RiskAndOps({
             </tbody>
           </table>
         </div>
+
+        {showManualSettlementModal && (
+          <div className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <form onSubmit={handleManualSettlementSubmit} className="bg-white rounded-xl shadow-xl border border-gray-100 max-w-sm w-full overflow-hidden text-xs">
+              <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                <h4 className="font-bold text-gray-900"><i className="fa-solid fa-file-invoice-dollar mr-2" />Record Manual Repayment</h4>
+                <button type="button" onClick={() => setShowManualSettlementModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                  <i className="fa-solid fa-xmark" />
+                </button>
+              </div>
+              
+              <div className="p-4 space-y-4 font-sans">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Corporate Client</label>
+                  <select 
+                    value={manualSettlementCompanyId} 
+                    onChange={e => setManualSettlementCompanyId(Number(e.target.value))}
+                    className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none"
+                  >
+                    {companies.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} (Out: {c.utilized.toLocaleString()} MMK)</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Repayment Method</label>
+                  <select 
+                    value={manualSettlementMethod} 
+                    onChange={e => setManualSettlementMethod(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none"
+                  >
+                    <option value="Cash">Cash (Manual)</option>
+                    <option value="Bank">Bank Transfer (Manual)</option>
+                    <option value="Cheque">Cheque (Manual)</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Repay Amount (MMK)</label>
+                  <input 
+                    type="number"
+                    value={manualSettlementAmount}
+                    onChange={e => setManualSettlementAmount(Number(e.target.value))}
+                    className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none font-mono"
+                    min="1000"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Reference Code (Optional)</label>
+                  <input 
+                    type="text"
+                    value={manualSettlementRef}
+                    onChange={e => setManualSettlementRef(e.target.value)}
+                    placeholder="E.g. KBZ-TRX-88219"
+                    className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none"
+                  />
+                </div>
+              </div>
+              
+              <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-2">
+                <button type="button" onClick={() => setShowManualSettlementModal(false)} className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded font-semibold cursor-pointer">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-gray-900 text-white rounded font-semibold hover:bg-black cursor-pointer">
+                  Submit to Maker Queue
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
       </div>
     );
   };

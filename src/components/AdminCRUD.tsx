@@ -60,6 +60,17 @@ export default function AdminCRUD({
   const [compBudget, setCompBudget] = useState(50000000);
   const [compStatus, setCompStatus] = useState<'Active' | 'Inactive' | 'Frozen'>('Active');
 
+  // Company Config States
+  const [compConfigEnabled, setCompConfigEnabled] = useState(false);
+  const [compFeeModel, setCompFeeModel] = useState<'system_default' | 'flat' | 'percentage' | 'tiered'>('system_default');
+  const [compFeePayer, setCompFeePayer] = useState<'system_default' | 'employee' | 'corporate'>('system_default');
+  const [compSettlementCycle, setCompSettlementCycle] = useState<'monthly' | 'bi_weekly' | 'weekly'>('monthly');
+  const [compMaxPercent, setCompMaxPercent] = useState<number>(50);
+  const [compCutoffDay, setCompCutoffDay] = useState<number>(25);
+  const [compGapDays, setCompGapDays] = useState<number>(5);
+  const [compLateReminder, setCompLateReminder] = useState<number>(3);
+  const [compMaxRequests, setCompMaxRequests] = useState<number>(3);
+
   const openAddCompany = () => {
     setEditCompanyId(null);
     setCompName('');
@@ -70,6 +81,16 @@ export default function AdminCRUD({
     setCompTier('C');
     setCompBudget(50000000);
     setCompStatus('Active');
+    
+    setCompConfigEnabled(false);
+    setCompFeeModel('system_default');
+    setCompFeePayer('system_default');
+    setCompSettlementCycle('monthly');
+    setCompMaxPercent(50);
+    setCompCutoffDay(25);
+    setCompGapDays(5);
+    setCompLateReminder(3);
+    setCompMaxRequests(3);
     setShowCompanyModal(true);
   };
 
@@ -83,6 +104,28 @@ export default function AdminCRUD({
     setCompTier(c.tier);
     setCompBudget(c.budget);
     setCompStatus(c.status === 'Onboarding' ? 'Active' : c.status as any);
+    
+    if (c.config) {
+      setCompConfigEnabled(true);
+      setCompFeeModel(c.config.feeModel);
+      setCompFeePayer(c.config.feePayer);
+      setCompSettlementCycle(c.config.settlementCycle);
+      setCompMaxPercent(c.config.maxPercentSalary);
+      setCompCutoffDay(c.config.payrollCutoffDay);
+      setCompGapDays(c.config.gapDaysAfterPayroll || 5);
+      setCompLateReminder(c.config.lateReminderDays || 3);
+      setCompMaxRequests(c.config.maxMonthlyRequests || 3);
+    } else {
+      setCompConfigEnabled(false);
+      setCompFeeModel('system_default');
+      setCompFeePayer('system_default');
+      setCompSettlementCycle('monthly');
+      setCompMaxPercent(50);
+      setCompCutoffDay(25);
+      setCompGapDays(5);
+      setCompLateReminder(3);
+      setCompMaxRequests(3);
+    }
     setShowCompanyModal(true);
   };
 
@@ -92,6 +135,17 @@ export default function AdminCRUD({
       alert('Please fill out all required fields.');
       return;
     }
+
+    const newConfig = compConfigEnabled ? {
+      feeModel: compFeeModel,
+      feePayer: compFeePayer,
+      settlementCycle: compSettlementCycle,
+      maxPercentSalary: compMaxPercent,
+      payrollCutoffDay: compCutoffDay,
+      gapDaysAfterPayroll: compGapDays,
+      lateReminderDays: compLateReminder,
+      maxMonthlyRequests: compMaxRequests
+    } : undefined;
 
     if (editCompanyId !== null) {
       // Edit
@@ -104,7 +158,8 @@ export default function AdminCRUD({
         contact: compContact,
         tier: compTier,
         budget: compBudget,
-        status: compStatus as any
+        status: compStatus as any,
+        config: newConfig
       } : c));
       showToast('Company updated successfully.');
     } else {
@@ -120,7 +175,8 @@ export default function AdminCRUD({
         budget: compBudget,
         utilized: 0,
         status: compStatus as any,
-        branchesCount: compType === 'Corporate' ? 1 : 1
+        branchesCount: compType === 'Corporate' ? 1 : 1,
+        config: newConfig
       };
       setCompanies(prev => [...prev, newComp]);
       showToast('New Company registered successfully.');
@@ -148,6 +204,9 @@ export default function AdminCRUD({
   const [empTrusted, setEmpTrusted] = useState(true);
   const [empStatus, setEmpStatus] = useState<'Active' | 'Unverified' | 'Frozen' | 'Suspended' | 'Terminated'>('Active');
   const [empCompanyId, setEmpCompanyId] = useState(1);
+  const [empEwaStage, setEmpEwaStage] = useState<'Verify Employment' | 'Allowed EWA'>('Verify Employment');
+  const [empVerifyStatus, setEmpVerifyStatus] = useState<'Pending HR Invite' | 'Invited' | 'Self-Onboarded Request' | 'Verified'>('Pending HR Invite');
+  const [empInviteMethod, setEmpInviteMethod] = useState<'SMS' | 'Viber' | 'Telegram'>('SMS');
 
   const openAddEmployee = () => {
     setEditEmployeeId(null);
@@ -160,8 +219,11 @@ export default function AdminCRUD({
     setEmpBranch('Head Office');
     setEmpSalary(500000);
     setEmpJoinDate('2025-01-01');
-    setEmpTrusted(true);
-    setEmpStatus('Active');
+    setEmpTrusted(false);
+    setEmpStatus('Unverified');
+    setEmpEwaStage('Verify Employment');
+    setEmpVerifyStatus('Pending HR Invite');
+    setEmpInviteMethod('SMS');
     setEmpCompanyId(companies[0]?.id || 1);
     setShowEmployeeModal(true);
   };
@@ -179,6 +241,9 @@ export default function AdminCRUD({
     setEmpJoinDate(emp.joinDate);
     setEmpTrusted(emp.trusted);
     setEmpStatus(emp.status);
+    setEmpEwaStage(emp.ewaStage || (emp.trusted ? 'Allowed EWA' : 'Verify Employment'));
+    setEmpVerifyStatus(emp.verifyStatus || 'Verified');
+    setEmpInviteMethod(emp.inviteMethod || 'SMS');
     setEmpCompanyId(emp.companyId);
     setShowEmployeeModal(true);
   };
@@ -202,8 +267,11 @@ export default function AdminCRUD({
         branch: empBranch,
         salary: empSalary,
         joinDate: empJoinDate,
-        trusted: empTrusted,
+        trusted: empEwaStage === 'Allowed EWA',
         status: empStatus,
+        ewaStage: empEwaStage,
+        verifyStatus: empEwaStage === 'Verify Employment' ? empVerifyStatus : 'Verified',
+        inviteMethod: empEwaStage === 'Verify Employment' ? empInviteMethod : undefined,
         companyId: empCompanyId
       } : emp));
       showToast('Employee details updated successfully.');
@@ -219,8 +287,11 @@ export default function AdminCRUD({
         branch: empBranch,
         salary: empSalary,
         joinDate: empJoinDate,
-        trusted: empTrusted,
+        trusted: empEwaStage === 'Allowed EWA',
         status: empStatus,
+        ewaStage: empEwaStage,
+        verifyStatus: empEwaStage === 'Verify Employment' ? empVerifyStatus : 'Verified',
+        inviteMethod: empEwaStage === 'Verify Employment' ? empInviteMethod : undefined,
         companyId: empCompanyId
       };
       setEmployees(prev => [...prev, newEmp]);
@@ -672,7 +743,7 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
                               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                                 emp.trusted ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-500'
                               }`}>
-                                {emp.trusted ? 'Whitelisted' : 'No'}
+                                {emp.trusted ? 'Whitelisted' : 'Verify Pipeline'}
                               </span>
                             </div>
                             <span className="text-[10px] text-gray-400 font-mono mt-0.5">{emp.code}</span>
@@ -703,11 +774,18 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
                         </td>
                         <td className="p-3 font-mono font-bold text-gray-950">{emp.salary.toLocaleString()}</td>
                         <td className="p-3">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
-                            emp.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
-                          }`}>
-                            {emp.status}
-                          </span>
+                          <div className="flex flex-col space-y-1 items-start">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
+                              emp.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
+                            }`}>
+                              {emp.status}
+                            </span>
+                            {!emp.trusted && emp.verifyStatus && (
+                              <span className="text-[9px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                {emp.verifyStatus}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3 text-right space-x-1.5">
                           <button onClick={() => openEditEmployee(emp)} className="text-gray-500 hover:text-amber-700 cursor-pointer text-xs p-1">
@@ -1242,7 +1320,7 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
                       <span className="text-gray-400 text-[10px] w-20">Bracket {i + 1}:</span>
                       <input
                         type="text"
-                        value={`${t.min.toLocaleString()} to ${t.max === Infinity ? 'Max' : t.max.toLocaleString()}`}
+                        value={`${t.min?.toLocaleString() ?? 0} to ${(t.max === Infinity || t.max === null) ? 'Max' : t.max?.toLocaleString() ?? 0}`}
                         disabled
                         className="bg-gray-100 border border-gray-200 rounded p-1.5 font-mono text-[10px] w-48 text-gray-500"
                       />
@@ -1318,6 +1396,40 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
                 className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
                 min="1"
                 max="31"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-700 mb-1">Gap Days Before Next Cycle</label>
+              <input
+                type="number"
+                value={feeConfig.gapDaysAfterPayroll}
+                onChange={(e) => setFeeConfig({ ...feeConfig, gapDaysAfterPayroll: Number(e.target.value) })}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                min="0"
+                max="10"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-700 mb-1">Late Reminder Trigger (Days)</label>
+              <input
+                type="number"
+                value={feeConfig.lateReminderDays}
+                onChange={(e) => setFeeConfig({ ...feeConfig, lateReminderDays: Number(e.target.value) })}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                min="1"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-gray-700 mb-1">Max Monthly Requests (Velocity)</label>
+              <input
+                type="number"
+                value={feeConfig.maxMonthlyRequests}
+                onChange={(e) => setFeeConfig({ ...feeConfig, maxMonthlyRequests: Number(e.target.value) })}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                min="1"
               />
             </div>
 
@@ -1488,6 +1600,79 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
                 </div>
               </div>
 
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-gray-100 px-3 py-2 flex items-center justify-between border-b border-gray-200">
+                  <div className="font-semibold text-gray-800 flex items-center space-x-2">
+                    <i className="fa-solid fa-sliders" />
+                    <span>Company-Specific Rules & Config</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={compConfigEnabled} onChange={e => setCompConfigEnabled(e.target.checked)} />
+                    <div className="w-8 h-4 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-emerald-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+                  </label>
+                </div>
+                {compConfigEnabled && (
+                  <div className="p-3 bg-gray-50/50 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-700 mb-1">Fee Model Override</label>
+                        <select value={compFeeModel} onChange={e => setCompFeeModel(e.target.value as any)} className="w-full bg-white border border-gray-200 rounded p-1.5 focus:outline-none text-[11px]">
+                          <option value="system_default">Inherit Default</option>
+                          <option value="flat">Flat Rate</option>
+                          <option value="percentage">Percentage</option>
+                          <option value="tiered">Tiered</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-700 mb-1">Fee Payer</label>
+                        <select value={compFeePayer} onChange={e => setCompFeePayer(e.target.value as any)} className="w-full bg-white border border-gray-200 rounded p-1.5 focus:outline-none text-[11px]">
+                          <option value="system_default">Inherit Default</option>
+                          <option value="employee">Employee Deducted</option>
+                          <option value="corporate">Corporate Covered</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-700 mb-1">Settlement Cycle</label>
+                        <select value={compSettlementCycle} onChange={e => setCompSettlementCycle(e.target.value as any)} className="w-full bg-white border border-gray-200 rounded p-1.5 focus:outline-none text-[11px]">
+                          <option value="monthly">Monthly</option>
+                          <option value="bi_weekly">Bi-Weekly</option>
+                          <option value="weekly">Weekly</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-700 mb-1">Max % Salary Allowed</label>
+                        <input type="number" value={compMaxPercent} onChange={e => setCompMaxPercent(Number(e.target.value))} className="w-full bg-white border border-gray-200 rounded p-1.5 focus:outline-none text-[11px] font-mono" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-700 mb-1">Payroll Cutoff Day</label>
+                        <input type="number" value={compCutoffDay} onChange={e => setCompCutoffDay(Number(e.target.value))} min="1" max="31" className="w-full bg-white border border-gray-200 rounded p-1.5 focus:outline-none text-[11px] font-mono" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-700 mb-1">Gap Days (Next Cycle)</label>
+                        <input type="number" value={compGapDays} onChange={e => setCompGapDays(Number(e.target.value))} min="0" max="10" className="w-full bg-white border border-gray-200 rounded p-1.5 focus:outline-none text-[11px] font-mono" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-700 mb-1">Late Reminder Trigger (Days)</label>
+                        <input type="number" value={compLateReminder} onChange={e => setCompLateReminder(Number(e.target.value))} min="1" className="w-full bg-white border border-gray-200 rounded p-1.5 focus:outline-none text-[11px] font-mono" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-700 mb-1">Max Monthly Requests (Velocity)</label>
+                        <input type="number" value={compMaxRequests} onChange={e => setCompMaxRequests(Number(e.target.value))} min="1" className="w-full bg-white border border-gray-200 rounded p-1.5 focus:outline-none text-[11px] font-mono" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
             </div>
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-2">
               <button type="button" onClick={() => setShowCompanyModal(false)} className="px-3 py-1.5 border border-gray-200 hover:bg-gray-100 rounded-lg font-medium cursor-pointer">
@@ -1619,18 +1804,58 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="trusted"
-                  checked={empTrusted}
-                  onChange={(e) => setEmpTrusted(e.target.checked)}
-                  className="w-4 h-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded cursor-pointer"
-                />
-                <label htmlFor="trusted" className="font-semibold text-gray-700 cursor-pointer">
-                  Toggle EWA whitelisted trusted employee status (is_whitelisted = true)
-                </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">EWA Stage Pipeline</label>
+                  <select
+                    value={empEwaStage}
+                    onChange={(e) => setEmpEwaStage(e.target.value as any)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 focus:outline-none"
+                  >
+                    <option value="Verify Employment">Verify Employment</option>
+                    <option value="Allowed EWA">Allowed EWA (Whitelist)</option>
+                  </select>
+                </div>
+                {empEwaStage === 'Verify Employment' && (
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Onboarding / Invite Status</label>
+                    <select
+                      value={empVerifyStatus}
+                      onChange={(e) => setEmpVerifyStatus(e.target.value as any)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 focus:outline-none"
+                    >
+                      <option value="Pending HR Invite">Pending HR Invite</option>
+                      <option value="Invited">Invited (Sent App Link)</option>
+                      <option value="Self-Onboarded Request">Self-Onboarded Request</option>
+                      <option value="Verified">Verified by HR</option>
+                    </select>
+                  </div>
+                )}
               </div>
+
+              {empEwaStage === 'Verify Employment' && empVerifyStatus === 'Pending HR Invite' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Invite Delivery Method</label>
+                    <select
+                      value={empInviteMethod}
+                      onChange={(e) => setEmpInviteMethod(e.target.value as any)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 focus:outline-none"
+                    >
+                      <option value="SMS">SMS / Text Message</option>
+                      <option value="Viber">Viber</option>
+                      <option value="Telegram">Telegram</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {empEwaStage === 'Verify Employment' && empVerifyStatus === 'Pending HR Invite' && (
+                <div className="bg-blue-50 text-blue-800 p-2 text-[10px] rounded flex items-center space-x-2">
+                  <i className="fa-solid fa-paper-plane shrink-0" />
+                  <span>Upon saving, system will auto-dispatch app download link & invite code via {empInviteMethod} to {empPhone}.</span>
+                </div>
+              )}
 
             </div>
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-2">

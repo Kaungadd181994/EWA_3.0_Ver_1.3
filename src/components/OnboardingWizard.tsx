@@ -27,6 +27,16 @@ export default function OnboardingWizard({
   const [riskScore, setRiskScore] = useState<number>(75);
   const [allocatedBudget, setAllocatedBudget] = useState<number>(50000000);
 
+  // States for Integration Config (Step 5 Corporate)
+  const [configFeeModel, setConfigFeeModel] = useState<'system_default' | 'flat' | 'percentage' | 'tiered'>('system_default');
+  const [configFeePayer, setConfigFeePayer] = useState<'system_default' | 'employee' | 'corporate'>('system_default');
+  const [configSettlementCycle, setConfigSettlementCycle] = useState<'monthly' | 'bi_weekly' | 'weekly'>('monthly');
+  const [configMaxPercent, setConfigMaxPercent] = useState<number>(50);
+  const [configCutoffDay, setConfigCutoffDay] = useState<number>(25);
+  const [configGapDays, setConfigGapDays] = useState<number>(5);
+  const [configLateReminder, setConfigLateReminder] = useState<number>(3);
+  const [configMaxRequests, setConfigMaxRequests] = useState<number>(3);
+
   const triggerToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -107,7 +117,17 @@ export default function OnboardingWizard({
         budget: approvedBudget || (isSME ? 20000000 : 50000000),
         utilized: 0,
         status: 'Active',
-        branchesCount: 1
+        branchesCount: 1,
+        config: !isSME ? {
+          feeModel: configFeeModel,
+          feePayer: configFeePayer,
+          settlementCycle: configSettlementCycle,
+          maxPercentSalary: configMaxPercent,
+          payrollCutoffDay: configCutoffDay,
+          gapDaysAfterPayroll: configGapDays,
+          lateReminderDays: configLateReminder,
+          maxMonthlyRequests: configMaxRequests
+        } : undefined
       };
       setCompanies(prev => [...prev, newComp]);
       
@@ -390,10 +410,98 @@ export default function OnboardingWizard({
 
                         {/* Step 5: Integration & Go-Live */}
                         {currentOnboarding.currentStep === 4 && (
-                          <div className="space-y-2">
-                            <p className="text-gray-600 leading-normal">
-                              Setup complete. The system will deploy e-money liquidity gateways, setup an active operator ledger slice, and generate initial HR invitation credentials.
+                          <div className="space-y-4">
+                            <p className="text-gray-600 leading-normal text-xs">
+                              Configure company-specific Circle Ledger & Settlement parameters before final deployment. Leave as default to inherit system-wide settings.
                             </p>
+                            <div className="bg-white p-4 rounded-xl border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                              <div>
+                                <label className="block font-semibold text-gray-700 mb-1">Fee Model override</label>
+                                <select 
+                                  value={configFeeModel} 
+                                  onChange={e => setConfigFeeModel(e.target.value as any)}
+                                  className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none"
+                                >
+                                  <option value="system_default">Inherit System Default</option>
+                                  <option value="flat">Flat Rate</option>
+                                  <option value="percentage">Percentage</option>
+                                  <option value="tiered">Tiered</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block font-semibold text-gray-700 mb-1">Fee Payer</label>
+                                <select 
+                                  value={configFeePayer} 
+                                  onChange={e => setConfigFeePayer(e.target.value as any)}
+                                  className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none"
+                                >
+                                  <option value="system_default">Inherit System Default</option>
+                                  <option value="employee">Employee Deducted</option>
+                                  <option value="corporate">Corporate Covered</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block font-semibold text-gray-700 mb-1">Settlement Cycle</label>
+                                <select 
+                                  value={configSettlementCycle} 
+                                  onChange={e => setConfigSettlementCycle(e.target.value as any)}
+                                  className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none"
+                                >
+                                  <option value="monthly">Monthly</option>
+                                  <option value="bi_weekly">Bi-Weekly</option>
+                                  <option value="weekly">Weekly</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block font-semibold text-gray-700 mb-1">Max % Salary Allowed</label>
+                                <input 
+                                  type="number" 
+                                  value={configMaxPercent} 
+                                  onChange={e => setConfigMaxPercent(Number(e.target.value))}
+                                  className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="block font-semibold text-gray-700 mb-1">Payroll Cutoff Day</label>
+                                <input 
+                                  type="number" 
+                                  value={configCutoffDay} 
+                                  onChange={e => setConfigCutoffDay(Number(e.target.value))}
+                                  className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none font-mono"
+                                  min="1" max="31"
+                                />
+                              </div>
+                              <div>
+                                <label className="block font-semibold text-gray-700 mb-1">Gap Days (Next Cycle)</label>
+                                <input 
+                                  type="number" 
+                                  value={configGapDays} 
+                                  onChange={e => setConfigGapDays(Number(e.target.value))}
+                                  className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none font-mono"
+                                  min="0" max="10"
+                                />
+                              </div>
+                              <div>
+                                <label className="block font-semibold text-gray-700 mb-1">Late Reminder Trigger (Days)</label>
+                                <input 
+                                  type="number" 
+                                  value={configLateReminder} 
+                                  onChange={e => setConfigLateReminder(Number(e.target.value))}
+                                  className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none font-mono"
+                                  min="1"
+                                />
+                              </div>
+                              <div>
+                                <label className="block font-semibold text-gray-700 mb-1">Max Monthly Requests</label>
+                                <input 
+                                  type="number" 
+                                  value={configMaxRequests} 
+                                  onChange={e => setConfigMaxRequests(Number(e.target.value))}
+                                  className="w-full bg-gray-50 border border-gray-200 rounded p-2 outline-none font-mono"
+                                  min="1"
+                                />
+                              </div>
+                            </div>
                           </div>
                         )}
                       </>

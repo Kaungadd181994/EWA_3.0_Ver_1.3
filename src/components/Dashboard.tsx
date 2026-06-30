@@ -19,6 +19,8 @@ export default function Dashboard({
 }: DashboardProps) {
   const [simEmployeeId, setSimEmployeeId] = useState<number>(employees[0]?.id || 1);
   const [simAmount, setSimAmount] = useState<number>(50000);
+  const [simChannel, setSimChannel] = useState<string>('MoMoney');
+  const [simRepaymentMethod, setSimRepaymentMethod] = useState<string>('Bank');
   const [simMessage, setSimMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
   // Compute metrics from real-time balances
@@ -45,7 +47,7 @@ export default function Dashboard({
 
   const handleSimulate = (type: 'disburse' | 'repay') => {
     setSimMessage(null);
-    const result = addSimulatedTransaction(simAmount, type, Number(simEmployeeId));
+    const result = addSimulatedTransaction(simAmount, type, Number(simEmployeeId), simChannel, simRepaymentMethod);
     if (result.success) {
       setSimMessage({ text: result.message, isError: false });
       // Clear after delay
@@ -173,7 +175,7 @@ export default function Dashboard({
           </div>
 
           {/* Selector Form */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Select Active Employee</label>
               <select
@@ -203,6 +205,37 @@ export default function Dashboard({
                 min="10000"
                 max="200000"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Disburse Channel</label>
+              <select
+                value={simChannel}
+                onChange={(e) => setSimChannel(e.target.value)}
+                className="w-full text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+              >
+                <option value="MoMoney">MoMoney</option>
+                <option value="KBZ Pay">KBZ Pay</option>
+                <option value="Wave Money">Wave Money</option>
+                <option value="CB Pay">CB Pay</option>
+                <option value="AYA Pay">AYA Pay</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Repayment Source</label>
+              <select
+                value={simRepaymentMethod}
+                onChange={(e) => setSimRepaymentMethod(e.target.value)}
+                className="w-full text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+              >
+                <option value="MoPayment Wallet">MoPayment Wallet</option>
+                <option value="Bank">Bank Transfer</option>
+                <option value="Card">Card</option>
+                <option value="MM QR">MM QR</option>
+                <option value="Cash">Cash</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
           </div>
 

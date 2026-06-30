@@ -1,5 +1,18 @@
 export type CompanyType = 'Corporate' | 'SME';
 
+export interface CompanyConfig {
+  feeModel: 'system_default' | 'flat' | 'percentage' | 'tiered';
+  feePayer: 'system_default' | 'employee' | 'corporate';
+  settlementCycle: 'monthly' | 'bi_weekly' | 'weekly';
+  maxPercentSalary: number; // e.g. 50 (50% max limit)
+  payrollCutoffDay: number;
+  applyStartDay?: number;
+  applyEndDay?: number;
+  gapDaysAfterPayroll?: number;
+  lateReminderDays?: number;
+  maxMonthlyRequests?: number;
+}
+
 export interface Company {
   id: number;
   name: string;
@@ -12,6 +25,7 @@ export interface Company {
   utilized: number;
   status: 'Active' | 'Inactive' | 'Frozen' | 'Onboarding';
   branchesCount: number;
+  config?: CompanyConfig;
 }
 
 export interface Employee {
@@ -25,7 +39,10 @@ export interface Employee {
   branch: string;
   salary: number;
   joinDate: string;
-  trusted: boolean;
+  trusted: boolean; // Same as Allowed EWA (Whitelist)
+  ewaStage?: 'Verify Employment' | 'Allowed EWA';
+  verifyStatus?: 'Pending HR Invite' | 'Invited' | 'Self-Onboarded Request' | 'Verified';
+  inviteMethod?: 'SMS' | 'Viber' | 'Telegram';
   status: 'Active' | 'Unverified' | 'Frozen' | 'Suspended' | 'Terminated';
   companyId: number;
 }
@@ -60,6 +77,8 @@ export interface FeeConfig {
   applyStartDay: number;
   applyEndDay: number;
   freezeDay: number;
+  gapDaysAfterPayroll: number;
+  lateReminderDays: number;
   maxMonthlyRequests: number;
   payer: 'employee' | 'corporate';
 }
@@ -124,6 +143,7 @@ export interface CompanyOnboarding {
   approvedBudget?: number;
   signatoryName?: string;
   signatoryEmail?: string;
+  companyConfig?: CompanyConfig;
 }
 
 export interface SettlementRequest {
@@ -133,6 +153,8 @@ export interface SettlementRequest {
   amount: number;
   reference: string;
   proofUrl?: string; // Simulated base64 or URL
+  repaymentMethod?: 'MoPayment Wallet' | 'Bank' | 'Card' | 'MM QR' | 'Cash' | 'Other';
+  source?: 'API' | 'Manual';
   status: 'Pending' | 'Maker Approved' | 'Approved' | 'Rejected';
   submittedAt: string;
   verifiedAt?: string;

@@ -63,6 +63,8 @@ export const DEFAULT_FEE_CONFIG: FeeConfig = {
   applyStartDay: 1,
   applyEndDay: 23,
   freezeDay: 24,
+  gapDaysAfterPayroll: 5,
+  lateReminderDays: 3,
   maxMonthlyRequests: 3,
   payer: 'employee'
 };
