@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Company, Employee, User, FeeConfig, DisbursementFeedItem, SystemAuditLog } from '../types';
+import SystemAudit from './SystemAudit';
 
 interface AdminCRUDProps {
   companies: Company[];
@@ -53,10 +54,7 @@ export default function AdminCRUD({
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [userSearch, setUserSearch] = useState('');
   
-  // Audit Log search, filter & page state
-  const [auditSearch, setAuditSearch] = useState('');
-  const [auditCategory, setAuditCategory] = useState<'All' | 'Fee Configuration' | 'Validation Rules'>('All');
-  const [auditPage, setAuditPage] = useState(1);
+  // (Audit Log search, filter, and pagination states are now fully encapsulated inside the modular SystemAudit component)
 
   // Toasts
   const [toast, setToast] = useState<string | null>(null);
@@ -1640,6 +1638,14 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
 
   // System Audit Logs Viewer
   const renderSystemAudit = () => {
+    return (
+      <SystemAudit
+        auditLogs={auditLogs}
+        addAuditLog={addAuditLog}
+        showToast={showToast}
+      />
+    );
+    /*
     // 1. Filtering
     const filteredLogs = auditLogs.filter(log => {
       const matchesSearch = 
@@ -1706,7 +1712,7 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
           </button>
         </div>
 
-        {/* Top summary cards */}
+        // Top summary cards
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={() => { setAuditCategory('All'); setAuditPage(1); }}
@@ -1782,7 +1788,7 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
           </div>
         </div>
 
-        {/* Filter controls panel */}
+        // Filter controls panel
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
           <div className="relative w-full md:max-w-md">
             <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
@@ -1811,7 +1817,7 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
           </div>
         </div>
 
-        {/* Table list of logs */}
+        // Table list of logs
         <div className="bg-white rounded-xl border border-gray-150 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
@@ -1887,7 +1893,7 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
             </table>
           </div>
 
-          {/* Table pagination footer */}
+          // Table pagination footer
           {totalItems > 0 && (
             <div className="p-4 bg-gray-50 border-t border-gray-150 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
               <span className="text-gray-500 font-sans">
@@ -1933,7 +1939,7 @@ EMP-393,Aung Ko,+95977112839,12/SAYANA(N)229182,Maintenance,Senior Tech,620000,M
           )}
         </div>
       </div>
-    );
+    */
   };
 
   const renderActiveSubTab = () => {

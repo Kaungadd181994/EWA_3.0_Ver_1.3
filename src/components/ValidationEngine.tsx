@@ -44,6 +44,10 @@ export default function ValidationEngine({ companies, employees, rules, setRules
   const [velocityLimitCount, setVelocityLimitCount] = useState<number>(3);
   const [globalMaxSalaryPercent, setGlobalMaxSalaryPercent] = useState<number>(50);
 
+  const [lastSavedFreezeDay, setLastSavedFreezeDay] = useState<number>(24);
+  const [lastSavedVelocityLimit, setLastSavedVelocityLimit] = useState<number>(3);
+  const [lastSavedMaxSalaryPercent, setLastSavedMaxSalaryPercent] = useState<number>(50);
+
   // Notifications
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const showToast = (msg: string) => {
@@ -221,7 +225,50 @@ export default function ValidationEngine({ companies, employees, rules, setRules
   };
 
   const handleUpdateFreezeConfig = () => {
-    showToast('Global pre-disbursement freeze policies synchronized.');
+    const changes: string[] = [];
+    if (payrollFreezeDay !== lastSavedFreezeDay) {
+      changes.push(`Freeze Day: ${lastSavedFreezeDay}th -> ${payrollFreezeDay}th`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Validation Rules',
+          'Adjusted pre-disbursement Payroll Freeze Day constraint',
+          `Day ${lastSavedFreezeDay}`,
+          `Day ${payrollFreezeDay}`
+        );
+      }
+    }
+    if (velocityLimitCount !== lastSavedVelocityLimit) {
+      changes.push(`Velocity Limit: ${lastSavedVelocityLimit} -> ${velocityLimitCount} requests`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Validation Rules',
+          'Modified Max Allowed EWA Withdrawals per Cycle threshold',
+          `${lastSavedVelocityLimit} payouts`,
+          `${velocityLimitCount} payouts`
+        );
+      }
+    }
+    if (globalMaxSalaryPercent !== lastSavedMaxSalaryPercent) {
+      changes.push(`Global Max Salary Limit: ${lastSavedMaxSalaryPercent}% -> ${globalMaxSalaryPercent}%`);
+      if (addAuditLog) {
+        addAuditLog(
+          'Validation Rules',
+          'Updated Global base salary disbursement cap %',
+          `${lastSavedMaxSalaryPercent}%`,
+          `${globalMaxSalaryPercent}%`
+        );
+      }
+    }
+
+    setLastSavedFreezeDay(payrollFreezeDay);
+    setLastSavedVelocityLimit(velocityLimitCount);
+    setLastSavedMaxSalaryPercent(globalMaxSalaryPercent);
+
+    if (changes.length > 0) {
+      showToast(`Global freeze constraints committed. Saved ${changes.length} updates in system audit log.`);
+    } else {
+      showToast('Pre-disbursement bounds and thresholds are already up to date.');
+    }
   };
 
   return (
